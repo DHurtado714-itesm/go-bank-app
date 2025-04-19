@@ -16,3 +16,13 @@ CREATE TABLE IF NOT EXISTS accounts (
   created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID PRIMARY KEY,
+  from_account_id UUID REFERENCES accounts(id),
+  to_account_id UUID REFERENCES accounts(id),
+  amount NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+  currency TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
