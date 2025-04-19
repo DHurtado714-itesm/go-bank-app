@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"go-bank-app/pkg/jwt"
+	"go-bank-app/utils"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService interface {
@@ -32,18 +33,18 @@ func (s *authService) Login(ctx context.Context, email string, password string) 
 		return "", errors.New("invalid credentials")
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
-	if err != nil {
+	if !utils.CheckPasswordHash(password, user.HashedPassword) {
+		log.Println("❌ Hash error:", err)
 		return "", errors.New("invalid credentials")
 	}
 
 	token, err := jwt.GenerateToken(user.ID, user.Email)
 	if err != nil {
+		log.Println("❌ JWT error:", err)
 		return "", err
 	}
 
 	return token, nil
-
 }
 
 // Register implements AuthService.
@@ -53,7 +54,7 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 		return nil, errors.New("User already exists")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return nil, err
 	}
