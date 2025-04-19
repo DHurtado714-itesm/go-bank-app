@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	config "go-bank-app/configs"
+	"go-bank-app/internal/accounts"
 	"go-bank-app/internal/auth"
 	"go-bank-app/pkg/middleware"
 	"log"
@@ -44,6 +45,13 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `{"user_id": "%s"}`, userID)
 	})))
+
+	accountRepo := accounts.NewAccountRepository(conn)
+	accountService := accounts.NewAccountService(accountRepo)
+	accountHandler := accounts.NewAccountHandler(accountService)
+
+	http.Handle("/accounts", middleware.AuthMiddleware(http.HandlerFunc(accountHandler.Create)))
+	http.Handle("/accounts/balance", middleware.AuthMiddleware(http.HandlerFunc(accountHandler.GetBalance)))
 
 	port := ":8070"
 	fmt.Println("🚀 Server running at http://localhost" + port)

@@ -20,7 +20,7 @@ type accountRepository struct {
 func (r *accountRepository) CreateAccount(ctx context.Context, acc *Account) error {
 	query := `
 	INSERT INTO accounts (id, user_id, balance, currency, created_at, updated_at)
-	VALUES ($1, $2, $3, $4, $5)
+	VALUES ($1, $2, $3, $4, $5, $6)
 `
 	_, err := r.db.ExecContext(ctx, query, acc.ID, acc.UserID, acc.Balance, acc.Currency, acc.CreatedAt, acc.UpdatedAt)
 	return err
