@@ -1,0 +1,32 @@
+name: go-bank-app
+
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: bank
+      POSTGRES_USER: bank_user
+      POSTGRES_PASSWORD: bank_pass
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./docker/local/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  bank-backend:
+    build:
+      context: .
+    ports:
+      - "8070:8070"
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_DB_URI: postgres://bank_user:bank_pass@postgres:5432/bank?sslmode=disable
+    volumes:
+      - .:/app
+    command: ["go", "run", "cmd/main.go"]
+
+volumes:
+  db-data:
