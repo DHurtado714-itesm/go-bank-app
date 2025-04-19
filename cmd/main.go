@@ -17,7 +17,7 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("failed to load .env file")
 	}
-	
+
 	dbURL, err := config.GetString("POSTGRES_DB_URI")
 	if err != nil {
 		log.Fatal(err)
@@ -33,11 +33,11 @@ func main() {
 	authService := auth.NewAuthService(authRepo)
 	authHandler := auth.NewAuthHandler(authService)
 
-		// Rutas públicas
-		http.HandleFunc("/auth/register", authHandler.Register)
-		http.HandleFunc("/auth/login", authHandler.Login)
+	// Rutas públicas
+	http.HandleFunc("/auth/register", authHandler.Register)
+	http.HandleFunc("/auth/login", authHandler.Login)
 
-			// Ruta protegida con middleware
+	// Ruta protegida con middleware
 	http.Handle("/auth/me", middleware.AuthMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value(middleware.ContextUserIDKey).(string)
 		w.Header().Set("Content-Type", "application/json")

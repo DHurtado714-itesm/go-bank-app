@@ -42,7 +42,7 @@ func (r *authRepository) FindByEmail(ctx context.Context, email string) (*User, 
 	var user User
 	err := row.Scan(&user.ID, &user.Email, &user.HashedPassword, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows){
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
 

@@ -10,7 +10,7 @@ type AuthHandler struct {
 	service AuthService
 }
 
-func NewAuthHandler (service AuthService) *AuthHandler{
+func NewAuthHandler(service AuthService) *AuthHandler {
 	return &AuthHandler{service: service}
 }
 
@@ -27,7 +27,6 @@ type loginRequest struct {
 	baseRequest
 }
 
-
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -43,7 +42,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id": user.ID,
+		"id":    user.ID,
 		"email": user.Email,
 	})
 }

@@ -13,8 +13,8 @@ var jwtKey = []byte(config.GetStringOrDefault("JWT_SECRET", "super-secret-dev-ke
 func GenerateToken(userID, email string) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"email": email,
-		"exp": time.Now().Add(time.Hour * 72).Unix(),
+		"email":   email,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

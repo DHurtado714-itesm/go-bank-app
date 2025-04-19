@@ -60,11 +60,11 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 	}
 
 	user := &User{
-		ID: uuid.New().String(),
-		Email: email,
+		ID:             uuid.New().String(),
+		Email:          email,
 		HashedPassword: string(hashedPassword),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 
 	err = s.repo.CreateUser(ctx, user)
@@ -74,5 +74,3 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 
 	return user, nil
 }
-
-
