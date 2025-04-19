@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	config "go-bank-app/configs"
 	"go-bank-app/internal/accounts"
 	"go-bank-app/internal/auth"
+	"go-bank-app/internal/transactions"
 	"go-bank-app/pkg/middleware"
 	"log"
 	"net/http"
@@ -30,6 +32,7 @@ func main() {
 	}
 	defer conn.Close()
 
+	// ─── AUTH ─────────────────────────────────────────────
 	authRepo := auth.NewAuthRepository(conn)
 	authService := auth.NewAuthService(authRepo)
 	authHandler := auth.NewAuthHandler(authService)
@@ -46,14 +49,58 @@ func main() {
 		fmt.Fprintf(w, `{"user_id": "%s"}`, userID)
 	})))
 
+	// ─── ACCOUNTS ─────────────────────────────────────────
 	accountRepo := accounts.NewAccountRepository(conn)
 	accountService := accounts.NewAccountService(accountRepo)
 	accountHandler := accounts.NewAccountHandler(accountService)
+	
+	// Init listener to process commands
+	accounts.StartAccountBalanceWorker(accountRepo)
 
 	http.Handle("/accounts", middleware.AuthMiddleware(http.HandlerFunc(accountHandler.Create)))
 	http.Handle("/accounts/balance", middleware.AuthMiddleware(http.HandlerFunc(accountHandler.GetBalance)))
 
+	// ─── TRANSACTIONS ─────────────────────────────────────
+	txPublisher := &AccountTransferChannelAdapter{}
+	accountReader := &AccountReaderAdapter{accountService: accountService}
+
+	txRepo := transactions.NewTransactionRepository(conn)
+	txService := transactions.NewTransactionService(txRepo, txPublisher, accountReader)
+	txHandler := transactions.NewTransactionHandler(txService)
+	
+	http.Handle("/transactions/transfer", middleware.AuthMiddleware(http.HandlerFunc(txHandler.Transfer)))
+	http.Handle("/transactions/history", middleware.AuthMiddleware(http.HandlerFunc(txHandler.GetHistory)))
+
+	// ─── SERVER ───────────────────────────────────────────
 	port := ":8070"
 	fmt.Println("🚀 Server running at http://localhost" + port)
 	log.Fatal(http.ListenAndServe(port, nil))
+}
+
+// ─── ADAPTERS ───────────────────────────────────────────────
+
+type AccountTransferChannelAdapter struct{}
+
+func (a *AccountTransferChannelAdapter) PublishTransfer(cmd transactions.UpdateAccountBalanceCommand) error {
+	internalCmd := accounts.UpdateAccountBalanceCommand{
+		FromAccountID: cmd.FromAccountID,
+		ToAccountID:   cmd.ToAccountID,
+		Amount:        cmd.Amount,
+		ErrChan:       cmd.ErrChan,
+	}
+
+	accounts.AccountUpdateChannel <- internalCmd
+	return nil
+}
+
+type AccountReaderAdapter struct {
+	accountService accounts.AccountService
+}
+
+func (a *AccountReaderAdapter) GetAccountByUserID(ctx context.Context, userID string) (*transactions.AccountInfo, error) {
+	account, err := a.accountService.GetAccountByUserID(ctx, userID)
+	if err != nil || account == nil {
+		return nil, err
+	}
+	return &transactions.AccountInfo{ID: account.ID}, nil
 }
