@@ -74,7 +74,6 @@ func (r *accountRepository) Transfer(ctx context.Context, fromID string, toID st
 	return nil
 }
 
-
 // CreateAccount implements AccountRepository.
 func (r *accountRepository) CreateAccount(ctx context.Context, acc *Account) error {
 	query := `
