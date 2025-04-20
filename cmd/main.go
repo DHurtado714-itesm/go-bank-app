@@ -53,7 +53,7 @@ func main() {
 	accountRepo := accounts.NewAccountRepository(conn)
 	accountService := accounts.NewAccountService(accountRepo)
 	accountHandler := accounts.NewAccountHandler(accountService)
-	
+
 	// Init listener to process commands
 	accounts.StartAccountBalanceWorker(accountRepo)
 
@@ -67,7 +67,7 @@ func main() {
 	txRepo := transactions.NewTransactionRepository(conn)
 	txService := transactions.NewTransactionService(txRepo, txPublisher, accountReader)
 	txHandler := transactions.NewTransactionHandler(txService)
-	
+
 	http.Handle("/transactions/transfer", middleware.AuthMiddleware(http.HandlerFunc(txHandler.Transfer)))
 	http.Handle("/transactions/history", middleware.AuthMiddleware(http.HandlerFunc(txHandler.GetHistory)))
 
