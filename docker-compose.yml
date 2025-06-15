@@ -28,5 +28,10 @@ services:
       - .:/app
     command: ["go", "run", "cmd/main.go"]
 
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+
 volumes:
   db-data:
