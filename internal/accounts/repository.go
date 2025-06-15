@@ -11,6 +11,7 @@ type AccountRepository interface {
 	CreateAccount(ctx context.Context, acc *Account) error
 	GetBalance(ctx context.Context, accountID string) (float64, error)
 	GetAccountByUserID(ctx context.Context, userID string) (*Account, error)
+	GetAccountByID(ctx context.Context, accountID string) (*Account, error)
 	Transfer(ctx context.Context, fromID, toID string, amount float64) error
 }
 
@@ -103,6 +104,26 @@ func (r *accountRepository) GetAccountByUserID(ctx context.Context, userID strin
 		return nil, err
 	}
 
+	return &acc, nil
+}
+
+func (r *accountRepository) GetAccountByID(ctx context.Context, accountID string) (*Account, error) {
+	query := `
+        SELECT id, user_id, balance, currency, created_at
+        FROM accounts
+        WHERE id = $1
+        LIMIT 1
+        `
+	row := r.db.QueryRowContext(ctx, query, accountID)
+
+	var acc Account
+	err := row.Scan(&acc.ID, &acc.UserID, &acc.Balance, &acc.Currency, &acc.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
 	return &acc, nil
 }
 

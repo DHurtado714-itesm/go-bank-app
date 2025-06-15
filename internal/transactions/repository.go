@@ -8,7 +8,7 @@ import (
 
 type TransactionRepository interface {
 	Create(ctx context.Context, tx *Transaction) error
-	GetByAccount(ctx context.Context, accountID string) ([]Transaction, error)
+	GetByAccount(ctx context.Context, accountID string, filter TransactionFilter) ([]Transaction, error)
 }
 
 type transactionRepository struct {
@@ -24,24 +24,32 @@ func (r *transactionRepository) Create(ctx context.Context, t *Transaction) erro
 		t.FromAccountID, t.ToAccountID, t.Amount, t.Currency)
 
 	query := `
-		INSERT INTO transactions (id, from_account_id, to_account_id, amount, currency, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
-	_, err := r.db.ExecContext(ctx, query, t.ID, t.FromAccountID, t.ToAccountID, t.Amount, t.Currency, t.CreatedAt, t.UpdatedAt)
+                INSERT INTO transactions (id, from_account_id, to_account_id, amount, currency, description, category, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        `
+	_, err := r.db.ExecContext(ctx, query, t.ID, t.FromAccountID, t.ToAccountID, t.Amount, t.Currency, t.Description, t.Category, t.CreatedAt, t.UpdatedAt)
 	if err != nil {
 		log.Printf("❌ Failed to save transaction: %v", err)
 	}
 	return err
 }
 
-func (r *transactionRepository) GetByAccount(ctx context.Context, accountID string) ([]Transaction, error) {
-	query := `
-		SELECT id, from_account_id, to_account_id, amount, currency, created_at, updated_at
-		FROM transactions
-		WHERE from_account_id = $1 OR to_account_id = $1
-		ORDER BY created_at DESC
-	`
-	rows, err := r.db.QueryContext(ctx, query, accountID)
+func (r *transactionRepository) GetByAccount(ctx context.Context, accountID string, filter TransactionFilter) ([]Transaction, error) {
+	baseQuery := `
+                SELECT id, from_account_id, to_account_id, amount, currency, description, category, created_at, updated_at
+                FROM transactions
+                WHERE (from_account_id = $1 OR to_account_id = $1)`
+
+	var args []interface{}
+	args = append(args, accountID)
+	if filter.Category != "" {
+		baseQuery += " AND category = $2"
+		args = append(args, filter.Category)
+	}
+
+	baseQuery += " ORDER BY created_at DESC"
+
+	rows, err := r.db.QueryContext(ctx, baseQuery, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +59,7 @@ func (r *transactionRepository) GetByAccount(ctx context.Context, accountID stri
 
 	for rows.Next() {
 		var t Transaction
-		err := rows.Scan(&t.ID, &t.FromAccountID, &t.ToAccountID, &t.Amount, &t.Currency, &t.CreatedAt, &t.UpdatedAt)
+		err := rows.Scan(&t.ID, &t.FromAccountID, &t.ToAccountID, &t.Amount, &t.Currency, &t.Description, &t.Category, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

@@ -18,6 +18,8 @@ type transferRequest struct {
 	ToAccountID string  `json:"to_account_id"`
 	Amount      float64 `json:"amount"`
 	Currency    string  `json:"currency"` // Optional, you can validate if needed
+	Description string  `json:"description"`
+	Category    string  `json:"category"`
 }
 
 func (h *TransactionHandler) Transfer(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +36,7 @@ func (h *TransactionHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx, err := h.service.Transfer(r.Context(), userID, req.ToAccountID, req.Amount, req.Currency)
+	tx, err := h.service.Transfer(r.Context(), userID, req.ToAccountID, req.Amount, req.Currency, req.Description, req.Category)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -47,11 +49,34 @@ func (h *TransactionHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 func (h *TransactionHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middleware.ContextUserIDKey).(string)
 
-	transactions, err := h.service.GetByUser(r.Context(), userID)
+	filter := TransactionFilter{}
+	category := r.URL.Query().Get("category")
+	if category != "" {
+		filter.Category = category
+	}
+
+	transactions, err := h.service.GetByAccount(r.Context(), userID, filter)
 	if err != nil {
 		http.Error(w, "Error retrieving history", http.StatusInternalServerError)
 		return
 	}
 
 	json.NewEncoder(w).Encode(transactions)
+}
+
+func (h *TransactionHandler) GetStatementPDF(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.ContextUserIDKey).(string)
+	transactions, err := h.service.GetByAccount(r.Context(), userID, TransactionFilter{})
+	if err != nil {
+		http.Error(w, "Error retrieving history", http.StatusInternalServerError)
+		return
+	}
+
+	filePath := "statement.pdf"
+	if err := h.service.GenerateStatementPDF(transactions, filePath); err != nil {
+		http.Error(w, "Failed to generate PDF", http.StatusInternalServerError)
+		return
+	}
+
+	http.ServeFile(w, r, filePath)
 }

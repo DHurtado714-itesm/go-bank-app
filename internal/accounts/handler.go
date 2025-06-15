@@ -52,3 +52,24 @@ func (h *AccountHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 		"currency":   account.Currency,
 	})
 }
+
+// GetPublic exposes account balance without authentication, emulating an open banking endpoint.
+func (h *AccountHandler) GetPublic(w http.ResponseWriter, r *http.Request) {
+	accountID := r.URL.Query().Get("id")
+	if accountID == "" {
+		http.Error(w, "missing id", http.StatusBadRequest)
+		return
+	}
+
+	account, err := h.service.GetAccountByID(r.Context(), accountID)
+	if err != nil || account == nil {
+		http.Error(w, "Account not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"account_id": account.ID,
+		"balance":    account.Balance,
+		"currency":   account.Currency,
+	})
+}
