@@ -47,7 +47,7 @@ func (h *TransactionHandler) Transfer(w http.ResponseWriter, r *http.Request) {
 func (h *TransactionHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middleware.ContextUserIDKey).(string)
 
-	transactions, err := h.service.GetByAccount(r.Context(), userID)
+	transactions, err := h.service.GetByUser(r.Context(), userID)
 	if err != nil {
 		http.Error(w, "Error retrieving history", http.StatusInternalServerError)
 		return

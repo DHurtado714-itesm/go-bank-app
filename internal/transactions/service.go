@@ -13,6 +13,8 @@ import (
 type TransactionService interface {
 	Transfer(ctx context.Context, fromID, toID string, amount float64, currency string) (*Transaction, error)
 	GetByAccount(ctx context.Context, accountID string) ([]Transaction, error)
+	// GetByUser retrieves transactions for the account associated with the given user.
+	GetByUser(ctx context.Context, userID string) ([]Transaction, error)
 	GenerateStatementCSV(transactions []Transaction, filePath string) error
 }
 
@@ -25,6 +27,16 @@ type transactionService struct {
 // GetByAccount implements TransactionService.
 func (s *transactionService) GetByAccount(ctx context.Context, accountID string) ([]Transaction, error) {
 	return s.repo.GetByAccount(ctx, accountID)
+
+}
+
+// GetByUser implements TransactionService.
+func (s *transactionService) GetByUser(ctx context.Context, userID string) ([]Transaction, error) {
+	acc, err := s.reader.GetAccountByUserID(ctx, userID)
+	if err != nil || acc == nil {
+		return nil, errors.New("account not found")
+	}
+	return s.repo.GetByAccount(ctx, acc.ID)
 
 }
 
