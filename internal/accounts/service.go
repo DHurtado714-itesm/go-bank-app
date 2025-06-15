@@ -12,6 +12,7 @@ type AccountService interface {
 	Create(ctx context.Context, userID string, currency Currency) (*Account, error)
 	GetBalance(ctx context.Context, accountID string) (float64, error)
 	GetAccountByUserID(ctx context.Context, userID string) (*Account, error)
+	GetAccountByID(ctx context.Context, accountID string) (*Account, error)
 }
 
 type accountService struct {
@@ -50,6 +51,10 @@ func (s *accountService) Create(ctx context.Context, userID string, currency Cur
 // GetAccountByUserID implements AccountService.
 func (s *accountService) GetAccountByUserID(ctx context.Context, userID string) (*Account, error) {
 	return s.repo.GetAccountByUserID(ctx, userID)
+}
+
+func (s *accountService) GetAccountByID(ctx context.Context, accountID string) (*Account, error) {
+	return s.repo.GetAccountByID(ctx, accountID)
 }
 
 // GetBalance implements AccountService.

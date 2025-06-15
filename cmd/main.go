@@ -59,6 +59,8 @@ func main() {
 
 	http.Handle("/accounts", middleware.AuthMiddleware(http.HandlerFunc(accountHandler.Create)))
 	http.Handle("/accounts/balance", middleware.AuthMiddleware(http.HandlerFunc(accountHandler.GetBalance)))
+	// Open banking public endpoint
+	http.HandleFunc("/open/accounts", accountHandler.GetPublic)
 
 	// ─── TRANSACTIONS ─────────────────────────────────────
 	txPublisher := &AccountTransferChannelAdapter{}
@@ -70,6 +72,7 @@ func main() {
 
 	http.Handle("/transactions/transfer", middleware.AuthMiddleware(http.HandlerFunc(txHandler.Transfer)))
 	http.Handle("/transactions/history", middleware.AuthMiddleware(http.HandlerFunc(txHandler.GetHistory)))
+	http.Handle("/transactions/statement/pdf", middleware.AuthMiddleware(http.HandlerFunc(txHandler.GetStatementPDF)))
 
 	// ─── SERVER ───────────────────────────────────────────
 	port := ":8070"

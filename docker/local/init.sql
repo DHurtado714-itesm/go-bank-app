@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS transactions (
   to_account_id UUID REFERENCES accounts(id),
   amount NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
   currency TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  category TEXT DEFAULT '',
   created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );

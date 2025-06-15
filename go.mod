@@ -27,6 +27,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
+	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/tools v0.32.0 // indirect

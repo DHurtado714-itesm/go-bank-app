@@ -8,12 +8,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jung-kurt/gofpdf"
 )
 
 type TransactionService interface {
-	Transfer(ctx context.Context, fromID, toID string, amount float64, currency string) (*Transaction, error)
-	GetByAccount(ctx context.Context, accountID string) ([]Transaction, error)
+	Transfer(ctx context.Context, fromID, toID string, amount float64, currency, description, category string) (*Transaction, error)
+	GetByAccount(ctx context.Context, accountID string, filter TransactionFilter) ([]Transaction, error)
 	GenerateStatementCSV(transactions []Transaction, filePath string) error
+	GenerateStatementPDF(transactions []Transaction, filePath string) error
 }
 
 type transactionService struct {
@@ -23,13 +25,13 @@ type transactionService struct {
 }
 
 // GetByAccount implements TransactionService.
-func (s *transactionService) GetByAccount(ctx context.Context, accountID string) ([]Transaction, error) {
-	return s.repo.GetByAccount(ctx, accountID)
+func (s *transactionService) GetByAccount(ctx context.Context, accountID string, filter TransactionFilter) ([]Transaction, error) {
+	return s.repo.GetByAccount(ctx, accountID, filter)
 
 }
 
 // Transfer implements TransactionService.
-func (s *transactionService) Transfer(ctx context.Context, fromID string, toID string, amount float64, currency string) (*Transaction, error) {
+func (s *transactionService) Transfer(ctx context.Context, fromID string, toID string, amount float64, currency, description, category string) (*Transaction, error) {
 	if fromID == toID {
 		return nil, errors.New("cannot transfer to the same account")
 	}
@@ -65,6 +67,8 @@ func (s *transactionService) Transfer(ctx context.Context, fromID string, toID s
 		ToAccountID:   toID,
 		Amount:        amount,
 		Currency:      currency,
+		Description:   description,
+		Category:      category,
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
 	}
@@ -102,6 +106,35 @@ func (s *transactionService) GenerateStatementCSV(transactions []Transaction, fi
 	}
 
 	return w.WriteToFile(filePath)
+}
+
+func (s *transactionService) GenerateStatementPDF(transactions []Transaction, filePath string) error {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "", 12)
+
+	headers := []string{"Transaction ID", "From", "To", "Amount", "Currency", "Date"}
+	for _, h := range headers {
+		pdf.CellFormat(32, 10, h, "1", 0, "", false, 0, "")
+	}
+	pdf.Ln(-1)
+
+	for _, t := range transactions {
+		row := []string{
+			t.ID,
+			t.FromAccountID,
+			t.ToAccountID,
+			strconv.FormatFloat(t.Amount, 'f', 2, 64),
+			t.Currency,
+			t.CreatedAt.Format("2006-01-02 15:04:05"),
+		}
+		for _, col := range row {
+			pdf.CellFormat(32, 10, col, "1", 0, "", false, 0, "")
+		}
+		pdf.Ln(-1)
+	}
+
+	return pdf.OutputFileAndClose(filePath)
 }
 
 func NewTransactionService(repo TransactionRepository, publisher AccountTransferPublisher, reader AccountReader) TransactionService {
